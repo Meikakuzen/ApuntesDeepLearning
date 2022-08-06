@@ -50,4 +50,205 @@
 
 - El ajuste del peso va a ser siempre perjudicial en el resultado del modelo, va a hacer que se ajuste en dirección contraria al error mínimo, por ello son importantes estos criterios
 
+## Funciones de activación
 
+- Hay:
+    - Discretas ( solo 2 posibilidades)
+    - Continuas ( rango de 0 a 1)
+- Cuando hablamos de funciones de activación nos interesa conocer la derivada de esta opción de activación, si es que existe
+- Para hacer el algoritmo del gradiente descendiente, para calcular el incremento del peso, parea ser capaces de corregir el peso, se necesita la derivada de la función de activación que se está utilizando.
+- La función de activación más básica es la de identidad o lineal
+> f ( x ) = x
+- La derivada es siempre 1, es como no aplicar nada
+- La función del escalón (discreta)
+    - para un valor negativo el valor de salida es 0
+    - si es positiva es 1
+- La sigmoide y la tangente hiperbólica son las más utilizadas
+- La sigmoide, dado un valor de x, ofrece una función de activación continua que va del 0 al 1. Tiene una fórmula para calcularla y calcular su derivada.
+- La tangente hiperbólica es parceida a la sigmoide pero esta va del -1 al 1. Tambien tiene su función para calcularse igual que su derivada
+- Relu es otra función lineal, cuando x es negativo la salida es 0
+
+
+~~~js
+import React from 'react'
+import { datosEntreno, Activacion } from './Ejemplo'
+
+import * as math from 'mathjs'
+
+const Perceptron = () => {
+
+
+
+    class Perceptron {  //activación lineal por defecto
+        constructor(activacion= 'lineal'){
+            this.datosEntreno = []
+            this.pesos =[]
+            this.sesgo=[]
+            this.activacion= activacion
+        }
+        
+        //seteo los datos de entrenamiento
+
+        loadTrainingData(datosEntreno){
+            this.datosEntreno = datosEntreno;
+        }
+
+        //esta función debe retornar un valor aleatorio
+        
+        initPeso(){
+            return Math.random()* (0.5 + 0.5) - 0.5
+        }
+
+        //inicializar todos los pesos. Hacer que el perceptron tenga unos valores aleatorios en lso pesos
+
+        initPesos(){ //cómo solo hay un sesgo, guardo en la primera posición um valor aleatorio
+            this.sesgo[0] = this.initPeso()
+            //cuántos pesos voy a tener? tantos como entradas haya ( tengo 3 entradas )
+            let numeroEntradas = this.datosEntreno[0].input.length
+
+            for(let i = 0; i < numeroEntradas; i ++){
+                this.pesos[i] = []
+                this.pesos[i][0] = this.initPeso()
+            }
+            
+        }
+         //calcular la entrada neta
+
+        net(input=[]){
+           let multi =  math.multiply(input, this.pesos);
+           return  math.add(multi,this.sesgo)
+        }
+        //función de activación: discretas( de 1 o -1, solo 2 posibles ) o continuas ( rango de 0 a 1 )
+
+        //activación
+        out(net = []){
+            let out = []
+                //recorrer los elementos de la entrada neta
+                for(let i = 0; i < net.length; i++){
+                    
+                    //setearle en su posición correspondient la entrada neta aplicando la activacióne
+                    //para ello llamo a la clase y tratarla como un array
+                    out[i] = Activacion[this.activacion](net[i])
+                }
+            return out
+        }
+        //propagación hacia adelante
+        forward(input){
+            let net = this.net //genero la entrada neta
+            return this.out(net) // me retorna la salida llamando a out insertando la entrada neta
+        }
+
+        //calcular el error
+        error(outEsperado, out){
+            return math.subtract(outEsperado, out)
+        }
+
+
+    }
+                                //puedo pasarle la función de activación que desee
+    let perceptron = new Perceptron('sigmoide')
+    perceptron.loadTrainingData(datosEntreno)
+    perceptron.initPesos()
+   let net = perceptron.net([75,32,12])
+    let output= perceptron.out(net)
+    let error= perceptron.error([200], output)
+
+    console.log(error)
+    
+
+
+  return (
+    <div>Perceptron</div>
+  )
+}
+
+export default Perceptron
+~~~
+El archivo de las funciones de activación
+~~~js
+export const datosEntreno = [
+    {input:[80,2,100], output:[400]},
+    {input:[60,2,900], output:[320]},
+    {input:[90,3,250], output:[510]},
+    {input:[55,2,350], output:[300]},
+    {input:[30,1,520], output:[250]},
+    {input:[80,4,90], output:[430]},
+    {input:[65,2,700], output:[250]},
+    {input:[120,3,400], output:[492]},
+    {input:[100,4,800], output:[355]},
+    {input:[75,1,650], output:[200]},
+    
+  ]
+
+  //Activación
+
+  export class Activacion{
+    //recibe la entrada neta, y si queremos derivarla
+    static lineal(net, derivada= false){
+        if(derivada){
+            1
+        }
+        return net;
+    }
+    static escalon(net, derivada=false){
+        if(derivada){
+            return 1
+        }
+        if(net< 0){
+            return 0
+        }else{
+            return 1
+        }
+    }
+    static escalonv2(net, derivada=false){
+        if(derivada){
+            return 1
+        }
+        if(net< 0){
+            return -1
+        }else{
+            return 1
+        }
+    }
+
+    static sigmoide(net, derivada=false){
+        if(derivada){
+            return this.derivadaSigmoide(net)
+        }
+        return 1/(Math.pow(Math.E, -net))
+    }
+    static derivadaSigmoide(net){
+        //para calcular la derivada de la sigmoide  necesito la sigmoide
+        let sigmoide= this.sigmoide(net);
+        return sigmoide * (1- sigmoide) //derivada
+    }
+    static tangenteHiperbolica(net, derivada= false){
+        if (derivada){
+            return this.derivadaTang(net)
+        }
+        return (Math.exp(net) - Math.exp(-net)) / (Math.exp(net)+ Math.exp(-net))
+    }
+    static derivadaTang(net){
+        let tang = this.tangenteHiperbolica(net)
+        return 1 - Math.pow(tangenteHiperbolica, 2)
+    }
+    static relu(net, derivada = false){
+        if(derivada){
+            if(net < 0){
+                return 0
+            }
+            return 1;
+        }else{
+            if (net < 0){
+                return 0;
+            }else {
+                return net
+            }
+        }
+    }
+
+  }
+
+~~~
+
+- Ahora que se ha podido calcular el error, se puede ver cómo ajustar los parámetros tanto de las entradas como del sesgo
